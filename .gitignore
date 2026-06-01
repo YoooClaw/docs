@@ -1,0 +1,13 @@
+# 依赖
+node_modules
+
+# 环境变量与密钥
+.env
+.wrangler
+
+# VitePress 构建产物与缓存
+src/.vitepress/dist
+src/.vitepress/cache
+
+# 系统
+.DS_Store
