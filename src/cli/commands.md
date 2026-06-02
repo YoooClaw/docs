@@ -7,7 +7,7 @@
 
 | 命令 | 说明 |
 | --- | --- |
-| `config init` | 交互式首次向导，生成 `config.json` + gateway token，打印手机端配置摘要。支持 `--non-interactive --from-file <config.json>`（`-` 读 stdin）、`--force` 覆盖。 |
+| `config init` | 交互式首次向导，生成 `config.json` + gateway token，打印手机端配置摘要，并自动后台拉起 daemon（开箱即用）。支持 `--non-interactive --from-file <config.json>`（`-` 读 stdin）、`--force` 覆盖、`--no-start` 只生成配置不启动 daemon。 |
 | `config show` | 显示当前 profile 配置（敏感字段遮罩）。`--show-secrets` 明文输出（需 TTY + 二次确认）。 |
 | `config set <key> <value>` | 设置单个配置项，支持点号路径（`daemon.port`、`notification.ignoredApps` 用逗号分隔）。 |
 | `config unset <key>` | 删除单个配置项。 |

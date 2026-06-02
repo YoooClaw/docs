@@ -55,21 +55,20 @@ curl -fsSL https://raw.githubusercontent.com/Yoooclaw/openclaw-plugin/master/pac
 ## 5 分钟上手
 
 ```bash
-# 1) 交互式向导：生成 config.json、gateway token，打印手机端配置摘要
+# 1) 交互式向导：填入 Relay api-key，生成 config.json、gateway token，
+#    并自动后台启动守护进程（无需再单独跑 daemon start）
 yoooclaw config init
 
-# 2) 设置 account 级 api-key，供 Relay 和云端 ASR 使用
-yoooclaw auth set-api-key <ock_xxx>
-
-# 3) 启动守护进程（默认后台 detach）
-yoooclaw daemon start
-
-# 4) 看状态：PID、监听端口、relay、灯效规则数、最近 ingest
+# 2) 看状态：PID、监听端口、relay、灯效规则数、最近 ingest
 yoooclaw daemon status
 
-# 5) 查今天的通知（手机推送落盘后）
+# 3) 查今天的通知（手机推送落盘后）
 yoooclaw notification +today
 ```
+
+> `config init` 收尾会自动后台拉起 daemon。向导里填了 api-key 就直接连上 Relay、开箱即用；
+> 如果当时留空，事后用 `yoooclaw auth set-api-key <ock_xxx>` 设置后再 `yoooclaw daemon restart` 让 daemon 连上 Relay。
+> 只想生成配置、暂不启动 daemon，加 `--no-start`。
 
 多手机 / 多账号接入时，可以给每个 key 一个稳定 label；daemon 会为每个 label 各连一条 Relay 隧道，入站数据也会带上对应 `clientLabel`：
 

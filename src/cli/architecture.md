@@ -51,7 +51,7 @@ yc light send --preset blink
 
 ## daemon 启动与端口
 
-`daemon start` 默认 fork 一个子进程到后台 detach；子进程跑 `daemon run-foreground`，最终调到 [daemon/main.ts](https://github.com/Yoooclaw/openclaw-plugin/blob/master/packages/cli/src/daemon/main.ts) 的 `runDaemonForeground`。流程：
+`daemon start` 默认 fork 一个子进程到后台 detach；子进程跑 `daemon run-foreground`，最终调到 [daemon/main.ts](https://github.com/Yoooclaw/openclaw-plugin/blob/master/packages/cli/src/daemon/main.ts) 的 `runDaemonForeground`。`config init` 收尾会自动调用同一套 `daemon start` 逻辑（除非传 `--no-start`），所以首次配置完即开箱即用、无需再手动启动。流程：
 
 ```text
 1. 检查 daemon.lock（process.kill(pid, 0) 探活）→ 已跑则拒绝
