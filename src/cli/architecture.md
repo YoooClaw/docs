@@ -21,10 +21,10 @@ Daemon HTTP   GET /notifications?from=…
 ```
 
 - **Shortcuts**（`+` 前缀）：对最常用场景做参数预设。`+today` = "今天 0 点到现在的通知"，背后就是 `notification search` 加几个 flag。
-- **Service commands**：`yoooclaw <service> <subcommand>`，列表见 `yoooclaw --help`。所有 service 命令路径在 [command-tree.ts](https://github.com/Yoooclaw/openclaw-plugin/blob/master/packages/cli/src/command-tree.ts) 集中声明。
+- **Service commands**：`yoooclaw <service> <subcommand>`，列表见 `yoooclaw --help`。所有 service 命令路径在 [command-tree.ts](https://github.com/YoooClaw/cli/blob/master/src/command-tree.ts) 集中声明。
 - **Raw API**：`yoooclaw api <METHOD> <PATH>` 是 escape hatch，直达 daemon HTTP。Agent 遇到未包装能力或调试时不卡。
 
-[program.ts](https://github.com/Yoooclaw/openclaw-plugin/blob/master/packages/cli/src/program.ts) 把命令树喂给 commander 构建命令；具体 handler 由 [commands/registry.ts](https://github.com/Yoooclaw/openclaw-plugin/blob/master/packages/cli/src/commands/registry.ts) 按 path（如 `config init`）注册。
+[program.ts](https://github.com/YoooClaw/cli/blob/master/src/program.ts) 把命令树喂给 commander 构建命令；具体 handler 由 [commands/registry.ts](https://github.com/YoooClaw/cli/blob/master/src/commands/registry.ts) 按 path（如 `config init`）注册。
 
 ## daemon 依赖与命令分类
 
@@ -51,7 +51,7 @@ yc light send --preset blink
 
 ## daemon 启动与端口
 
-`daemon start` 默认 fork 一个子进程到后台 detach；子进程跑 `daemon run-foreground`，最终调到 [daemon/main.ts](https://github.com/Yoooclaw/openclaw-plugin/blob/master/packages/cli/src/daemon/main.ts) 的 `runDaemonForeground`。`config init` 收尾会自动调用同一套 `daemon start` 逻辑（除非传 `--no-start`），所以首次配置完即开箱即用、无需再手动启动。流程：
+`daemon start` 默认 fork 一个子进程到后台 detach；子进程跑 `daemon run-foreground`，最终调到 [daemon/main.ts](https://github.com/YoooClaw/cli/blob/master/src/daemon/main.ts) 的 `runDaemonForeground`。`config init` 收尾会自动调用同一套 `daemon start` 逻辑（除非传 `--no-start`），所以首次配置完即开箱即用、无需再手动启动。流程：
 
 ```text
 1. 检查 daemon.lock（process.kill(pid, 0) 探活）→ 已跑则拒绝
@@ -72,7 +72,7 @@ yc light send --preset blink
 
 ## StandaloneRuntime：让插件代码免改跑在 daemon 里
 
-CLI 不是把通知 / 灯效规则这套逻辑重写了一遍 —— 而是**直接复用 phone-notifications 插件包**。窍门在 [daemon/runtime.ts](https://github.com/Yoooclaw/openclaw-plugin/blob/master/packages/cli/src/daemon/runtime.ts) 的 `StandaloneRuntime`：
+CLI 不是把通知 / 灯效规则这套逻辑重写了一遍 —— 而是**直接复用 phone-notifications 插件包**。窍门在 [daemon/runtime.ts](https://github.com/YoooClaw/cli/blob/master/src/daemon/runtime.ts) 的 `StandaloneRuntime`：
 
 ```ts
 class StandaloneRuntime {
@@ -93,7 +93,7 @@ class StandaloneRuntime {
 
 ## Relay 隧道：复用协议，daemon 内分发
 
-`startRelayTunnel`（[daemon/relay.ts](https://github.com/Yoooclaw/openclaw-plugin/blob/master/packages/cli/src/daemon/relay.ts)）继续复用插件的 `RelayClient`：连接、心跳、重连、frame 收发协议保持同源。差异在入站帧的处理方式：CLI daemon 不跑 OpenClaw 宿主 gateway，所以不再复用 `TunnelProxy`，而是用 [RelayDispatcher](https://github.com/Yoooclaw/openclaw-plugin/blob/master/packages/cli/src/daemon/relay-dispatcher.ts) 在同进程里派发。
+`startRelayTunnel`（[daemon/relay.ts](https://github.com/YoooClaw/cli/blob/master/src/daemon/relay.ts)）继续复用插件的 `RelayClient`：连接、心跳、重连、frame 收发协议保持同源。差异在入站帧的处理方式：CLI daemon 不跑 OpenClaw 宿主 gateway，所以不再复用 `TunnelProxy`，而是用 [RelayDispatcher](https://github.com/YoooClaw/cli/blob/master/src/daemon/relay-dispatcher.ts) 在同进程里派发。
 
 ```text
 CredentialSet (one or more account-level api-keys)
@@ -123,7 +123,7 @@ RelayDispatcher
 
 ## 录音同步与事件流
 
-daemon 侧先调用 `registerRecordingInterfaces` 注册 `recordings.list/status/rename/retranscribe/...` 这类通用 gateway 能力，再用 [recording-bridge.ts](https://github.com/Yoooclaw/openclaw-plugin/blob/master/packages/cli/src/daemon/recording-bridge.ts) 覆盖 `recordings.sync` 和 `POST /recordings`。覆盖的原因是独立 CLI 形态下 ASR 配置在本机 profile 里，而不是每次都要求手机端随请求传入。
+daemon 侧先调用 `registerRecordingInterfaces` 注册 `recordings.list/status/rename/retranscribe/...` 这类通用 gateway 能力，再用 [recording-bridge.ts](https://github.com/YoooClaw/cli/blob/master/src/daemon/recording-bridge.ts) 覆盖 `recordings.sync` 和 `POST /recordings`。覆盖的原因是独立 CLI 形态下 ASR 配置在本机 profile 里，而不是每次都要求手机端随请求传入。
 
 ```text
 手机端 recordings.sync / POST /recordings
@@ -160,7 +160,7 @@ recordings/state/events.jsonl
 
 ## 凭据分层：account 级 vs instance 级
 
-`auth status` 把这两层凭据分开管，源码见 [credentials/store.ts](https://github.com/Yoooclaw/openclaw-plugin/blob/master/packages/cli/src/credentials/store.ts)。account 级多 key 的完整设计（存储形态、管理命令、一 key 一隧道、按 client 查询）单列一章：[多 api-key 设计](/cli/multi-api-key)。
+`auth status` 把这两层凭据分开管，源码见 [credentials/store.ts](https://github.com/YoooClaw/cli/blob/master/src/credentials/store.ts)。account 级多 key 的完整设计（存储形态、管理命令、一 key 一隧道、按 client 查询）单列一章：[多 api-key 设计](/cli/multi-api-key)。
 
 ### account 级 api-key（跨 profile 共享）
 
@@ -202,7 +202,7 @@ auth.tokenRef:
   inline:<literal>
 ```
 
-`*Ref` 的好处：换存储位置不需要改命令逻辑，统一走 `resolveRef` / `writeRef`（[credentials/refs.ts](https://github.com/Yoooclaw/openclaw-plugin/blob/master/packages/cli/src/credentials/refs.ts)）。
+`*Ref` 的好处：换存储位置不需要改命令逻辑，统一走 `resolveRef` / `writeRef`（[credentials/refs.ts](https://github.com/YoooClaw/cli/blob/master/src/credentials/refs.ts)）。
 
 ## profile：多机 / 多账号隔离
 
@@ -231,7 +231,7 @@ auth.tokenRef:
 
 ## 输出统一契约
 
-`--format json|pretty|table|ndjson`，所有命令走 [output/format.ts](https://github.com/Yoooclaw/openclaw-plugin/blob/master/packages/cli/src/output/format.ts) 序列化。
+`--format json|pretty|table|ndjson`，所有命令走 [output/format.ts](https://github.com/YoooClaw/cli/blob/master/src/output/format.ts) 序列化。
 
 成功和失败**共用同一通道**（stdout）与可预测结构：
 
@@ -249,7 +249,7 @@ auth.tokenRef:
 
 ## 图片：与录音同构的下载通道
 
-`POST /images` 走 [image/channel.ts](https://github.com/Yoooclaw/openclaw-plugin/blob/master/packages/cli/src/image/channel.ts) 的 `ingestImage`：
+`POST /images` 走 [image/channel.ts](https://github.com/YoooClaw/cli/blob/master/src/image/channel.ts) 的 `ingestImage`：
 
 ```text
 1. respond(true) 先回，落 imageId + metadata 到 index.json，状态 syncing

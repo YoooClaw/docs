@@ -14,7 +14,7 @@ hero:
       link: /cli/
     - theme: alt
       text: GitHub
-      link: https://github.com/Yoooclaw/openclaw-plugin
+      link: https://github.com/YoooClaw/cli
 
 features:
   - title: 独立 yoooclaw CLI

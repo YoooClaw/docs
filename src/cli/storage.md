@@ -33,7 +33,7 @@ profiles/<name>/
 
 ## 通知：按天 JSON + 双重去重
 
-通知按天落到 `notifications/YYYY-MM-DD.json`（JSON 数组，追加写）。每条 [StoredNotification](https://github.com/Yoooclaw/openclaw-plugin/blob/master/packages/phone-notifications/src/notification/storage.ts) 结构：
+通知按天落到 `notifications/YYYY-MM-DD.json`（JSON 数组，追加写）。每条 [StoredNotification](https://github.com/YoooClaw/cli/blob/master/src/vendor/notification/storage.ts) 结构：
 
 ```json
 {

@@ -27,19 +27,13 @@ brew install opus-tools
 ## 从源码构建
 
 ```bash
-git clone https://github.com/Yoooclaw/openclaw-plugin.git
-cd openclaw-plugin
+git clone https://github.com/YoooClaw/cli.git
+cd cli
 
 bun install
 bun run build
 bun run test
 bun run typecheck
-```
-
-只构建 CLI 包：
-
-```bash
-bun run --filter '@yoooclaw/cli' build
 ```
 
 ## 下一步

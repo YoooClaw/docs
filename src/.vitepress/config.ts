@@ -46,7 +46,7 @@ export default defineConfig({
     },
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/Yoooclaw/openclaw-plugin' },
+      { icon: 'github', link: 'https://github.com/YoooClaw/cli' },
     ],
 
     search: {
