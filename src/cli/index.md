@@ -10,7 +10,11 @@
 
 两种分发渠道，功能完全一致，按是否方便装 Node 选择：
 
-### A. npm（需要 Node ≥ 22.12.0）
+::: tip 平台支持
+macOS / Linux 两种渠道都可用。**Windows 走 npm 渠道**（需 Node ≥ 22.12.0），原生二进制暂未提供 Windows 目标。Windows 上有两点差异：凭据以明文存放在 `~/.yoooclaw/credentials.json`（无系统 keychain 加固，`yoooclaw doctor` 会标记为 `skip` 并提示），`yoooclaw daemon stop` 经 HTTP `/daemon/stop` 优雅退出而非 POSIX 信号。详见 [存储与目录](/cli/storage)。
+:::
+
+### A. npm（需要 Node ≥ 22.12.0，Windows 用此渠道）
 
 免安装（npx，每次拉最新版）：
 
@@ -42,7 +46,7 @@ curl -fsSL https://raw.githubusercontent.com/Yoooclaw/openclaw-plugin/master/pac
   | sh -s -- --version 0.0.5 --dir ~/bin --force
 ```
 
-支持平台：`darwin-arm64` / `darwin-x64` / `linux-x64` / `linux-arm64`。Windows 暂走 npm。
+支持平台：`darwin-arm64` / `darwin-x64` / `linux-x64` / `linux-arm64`。**Windows 暂无原生二进制，请用上面的 npm 渠道。**
 
 二进制也可从 [GitHub Releases](https://github.com/Yoooclaw/openclaw-plugin/releases?q=cli-v) 手动下载，配合同 release 的 `checksums.txt` 校验。
 

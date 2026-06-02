@@ -66,6 +66,8 @@ yc light send --preset blink
 
 端口处理是关键设计：**起始端口 18789，被占自动 +1 顺延**，实际端口写进日志和 `daemon status`。所以排查时永远以 `daemon status` 的 `port` 为准，别假设一定是 18789。
 
+> **Windows 上的停止路径**：Node 在 Windows 没有真正的 POSIX 信号，`process.kill(pid, "SIGTERM")` 会直接 TerminateProcess，跳过上面第 8 步的优雅关闭。因此 `daemon stop` 在 Windows 上改打 HTTP `POST /daemon/stop`，由 daemon 自己触发同一套优雅关闭；超时（10s）才回退到硬杀。macOS / Linux 仍走 SIGTERM。
+
 绑非回环地址（`0.0.0.0` / 公网 IP）强制要求 gateway token 已设置，否则拒绝启动 —— 公网裸奔无 token 是个常见踩坑，干脆在启动期拦住。
 
 ## StandaloneRuntime：让插件代码免改跑在 daemon 里
@@ -170,6 +172,8 @@ recordings/state/events.jsonl
 3. keychain yoooclaw/api-key                        ← --keychain 写入的单 key
 4. file ~/.yoooclaw/credentials.json#apiKey         ← 旧版单 key
 ```
+
+> **keychain 仅 macOS（`security`）/ Linux（`secret-tool`）可用**。Windows 没有对接系统凭据管理器，`--keychain` 与第 3 层不生效，凭据落明文文件（第 2 / 4 层）。`yoooclaw doctor` 会把 keychain 检查标记为 `skip` 并提示「凭据将落文件」。
 
 `apiKeys[]` 里的每条记录都有 `label`、`key` 和可选 `default`：
 

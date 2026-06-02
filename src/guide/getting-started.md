@@ -15,6 +15,7 @@
 - [Bun](https://bun.sh) `>= 1.3.0`
 - Node.js `>= 22.12.0`
 - 使用本地 Whisper 转写时还需 `whisper-cpp`；处理 OGG/Opus 建议安装 `opus-tools` 或 `ffmpeg`
+- 平台：macOS / Linux 支持 npm 与原生二进制两种渠道；**Windows 经 npm 渠道支持**（`npm i -g @yoooclaw/cli`，需 Node ≥ 22.12.0），暂无原生二进制。Windows 上凭据落明文、daemon 经 HTTP 优雅停止，详见 [CLI 概述](/cli/)。
 
 macOS 本地 ASR 依赖示例：
 
