@@ -3,8 +3,11 @@ import { defineConfig } from 'vitepress'
 // VitePress 站点配置：https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: 'yoooclaw',
-  description: 'YoooClaw / OpenClaw 手机通知插件与独立 CLI 文档',
+  description: '独立 yoooclaw CLI 文档',
   lang: 'zh-CN',
+
+  // 插件文档暂时隐藏：源文件保留但不参与构建、不出现在导航与搜索中
+  srcExclude: ['plugin/**'],
 
   // 部署到 Cloudflare Pages，绑定自定义域 developer.yoooclaw.ai（根路径）
   // 故使用默认 base '/'
@@ -13,7 +16,6 @@ export default defineConfig({
     // https://vitepress.dev/reference/default-theme-config
     nav: [
       { text: '指南', link: '/guide/getting-started' },
-      { text: '插件', link: '/plugin/' },
       { text: 'CLI', link: '/cli/' },
     ],
 
@@ -23,18 +25,6 @@ export default defineConfig({
           text: '指南',
           items: [
             { text: '快速开始', link: '/guide/getting-started' },
-          ],
-        },
-      ],
-      '/plugin/': [
-        {
-          text: '手机通知插件',
-          items: [
-            { text: '概述与安装', link: '/plugin/' },
-            { text: '架构与实现逻辑', link: '/plugin/architecture' },
-            { text: '工作方式与存储', link: '/plugin/how-it-works' },
-            { text: '命令参考', link: '/plugin/commands' },
-            { text: '配置项', link: '/plugin/config' },
           ],
         },
       ],

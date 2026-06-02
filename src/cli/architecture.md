@@ -289,4 +289,3 @@ CLI 不是要替代插件 —— 两者是**互补**：
 - [命令参考](/cli/commands) —— 全部子命令清单。
 - [Agent Skill](/cli/skills) —— Agent 怎么自动驱动 CLI。
 - [调试与排错](/cli/debugging) —— Relay 连不上 / 推送收不到时的三步排查。
-- [插件架构与实现逻辑](/plugin/architecture) —— 插件侧那条同源代码。
