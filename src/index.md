@@ -53,6 +53,6 @@ features:
 
 - **建议有编程基础的同学使用。** 需要在终端里敲命令、理解 daemon / 配置 / 凭据等概念，并通常配合 Agent 使用。完全没有命令行经验的话，上手成本会比较高。
 - **与 App 插件互斥，二选一。** 独立 CLI 与 openclaw 客户端插件是两条不同的运行路径，**不要同时启用**，否则会相互抢占。装了独立 CLI 就走 CLI 这条路。
-- **不支持 chat / 跟 Hermes 对话。** 这是它和 App 最大的区别：CLI **没有聊天功能**，不能在 App 里跟 Hermes 对话。如果你的核心诉求是「打开 App 跟 Hermes 聊天」，那你需要的是 **App 插件**，而不是这个 CLI。
+- **不支持 chat / 跟 Hermes 对话。** 这是它和 App 最大的区别：CLI **没有聊天功能**，不能在 App 里跟 Hermes 对话。如果你的核心诉求是「打开 App 跟 Hermes 聊天」，那你需要的是 **openclaw / Hermes 插件**，而不是这个 CLI。
 
 想清楚后再开始：[快速开始](/guide/getting-started) · [了解独立 CLI](/cli/)
