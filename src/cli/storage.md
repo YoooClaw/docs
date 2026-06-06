@@ -64,7 +64,7 @@ recordings.sync(元数据)
   ↓  index.json 落条目，status=syncing_openclaw
 后台拉 OSS 音频 → audio/<id>.ogg (+ .srt 打点)
   ↓  status=transcribing
-ASR 转写（api: account ock- key / local: Whisper）
+ASR 转写（api/model-proxy，默认可回退 account ock- key）
   ↓
 transcript-data/<id>.json   ← 转写主存储（结构化：title/summary/text/segments）
 transcripts/<id>_<标题>.md  ← 正文（派生）
@@ -80,7 +80,7 @@ summaries/<id>.md           ← 摘要（派生）
 - **in-flight 去重**：手机端对同一 `recordingId` 重复推 sync 时，第二次直接返回当前状态，避免并行 ASR 撞状态机。
 - **事件流**：每次状态变化追加到 `state/events.jsonl`，`yc recording events --id <id> --watch` 可像 `tail -f` 一样跟随；同一事件也经 Relay 以 `recording.status` 推回手机端。
 
-ASR 配置写在 `recordings/asr-config.json`（`yc recording setup-asr` 生成），`mode=api` 缺 key 时回退到 account 级 `ock-` key，`mode=local` 走本机 Whisper。
+ASR 配置写在 `recordings/asr-config.json`（`yc recording setup-asr` 生成），`mode=api` 缺 key 时回退到 account 级 `ock-` key。当前 Go beta 只支持 `api` / model-proxy；`local` mode 保留在 schema 中用于兼容旧请求，但会被校验拒绝。
 
 ## 图片：与录音同构的下载通道
 
@@ -140,7 +140,7 @@ yc recording list --status transcribed --client phone-a
 所有命令走统一 `--format json|pretty|table|ndjson`：
 
 - **`ndjson`** 每条结果一行 JSON，适合 Agent 流式逐行消费与背压处理；
-- 成功 `{ "ok": true, ... }` / 失败 `{ "ok": false, "error": { "code": "YOOOCLAW_*", ... } }` 共用 stdout，失败再叠加**非零退出码**，让 `set -e` 和 Agent 都能直接判断；
+- 成功 `{ "ok": true, ... }` / 失败 `{ "ok": false, "error": { "code": "YOOOCLAW_*", ... } }` 共用 stdout；本地 CLI 错误会叠加**非零退出码**，Raw HTTP 结果还应检查 `ok` / HTTP status；
 - `--client <label>` 把多账号上下文切开，`--client all` 表示不过滤。
 
 把这几件事串起来，一次「帮我整理今天手机上发生了什么」的上下文构建就是：

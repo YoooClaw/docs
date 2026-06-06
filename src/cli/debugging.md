@@ -1,6 +1,6 @@
 # 调试与排错（Relay 连接与日志）
 
-手机通知和录音要进来，链路是 **手机 App → 托管 Relay → 本机 daemon → 落盘**。其中「连 Relay」这一步由 daemon 在启动时发起：daemon 用 account 级 api-key 连上 `wss://…/message/messages/ws/plugin`，再把 Relay 转发进来的 `req` 帧交给本进程的 `StandaloneRuntime` 分发；HTTP-style frame 则 loopback 到 daemon 自己的 HTTP server。多 key 模式下，每个 api-key label 都会对应一条 Relay 隧道。
+手机通知和录音要进来，链路是 **手机 App → 托管 Relay → 本机 daemon → 落盘**。其中「连 Relay」这一步由 daemon 在启动时发起：daemon 用 account 级 api-key 连上 `wss://…/message/messages/ws/plugin`，再把 Relay 转发进来的 `req` 帧交给 Go 版 Dispatcher 分发到 daemon gateway；HTTP-style frame 则 loopback 到 daemon 自己的 HTTP server。多 key 模式下，每个 api-key label 都会对应一条 Relay 隧道。
 
 所以排查顺序固定是三步：**CredentialSet 有没有可用 key → daemon 在不在跑 → 隧道连没连上**。
 
@@ -85,7 +85,7 @@ yc daemon logs -f --level error    # 只跟 error
 | 所有 🟡 命令报 `YOOOCLAW_DAEMON_NOT_RUNNING` | daemon 没跑 | `yc daemon start` |
 | `mode: standalone-http` 但已设 api-key | `relay.enabled=false` | `yc config set relay.enabled true` 后重启 |
 | `connected: false`，`reconnectAttempt` 持续增长 | 网络不通 / Relay 不可达 | 查网络；临时可走直连 HTTP（见下） |
-| 录音停在 `synced` 没有转写稿 | 未配置 ASR，或本地 / 云端 ASR 不可用 | `yc recording setup-asr ...` 后重试；同时看 `yc recording events --id <id>` |
+| 录音停在 `synced` 没有转写稿 | 未配置 ASR，或云端 model-proxy ASR 不可用 | `yc recording setup-asr --mode api --language auto --non-interactive` 后重试；同时看 `yc recording events --id <id>` |
 | 录音状态一会儿成功一会儿失败 | 手机端重复推同一 recordingId 或旧错误残留 | 新版 daemon 会 in-flight 去重并在成功终态清理 `lastError`；重启 daemon 后再观察事件流 |
 
 ## 主动操作与自检
@@ -97,7 +97,7 @@ yc tunnel reconnect --client phone-a
 yc tunnel +test       # 回环自检：daemon 给自己发一条 echo 通知，验证 ingest + 鉴权
 yc tunnel +test --client phone-a
 yc gateway test       # 模拟手机端调 /notifications，验证连通 / 鉴权
-yc doctor             # 环境自检：Node、目录权限、keychain、daemon、配置
+yc doctor             # 环境自检：Go runtime、目录权限、keychain、daemon、配置
 ```
 
 收到通知后，`yc daemon status` 里的 `lastIngestAt` / `ingestCount` 会变化，`yc notification search --client <label>` 能看到对应 label 的落盘通知——这两处是确认「整条链路打通」的最终凭据。

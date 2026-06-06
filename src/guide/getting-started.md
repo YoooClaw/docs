@@ -12,16 +12,17 @@
 
 ## 前置要求
 
-- [Bun](https://bun.sh) `>= 1.3.0`
-- Node.js `>= 22.12.0`
-- 使用本地 Whisper 转写时还需 `whisper-cpp`；处理 OGG/Opus 建议安装 `opus-tools` 或 `ffmpeg`
-- 平台：macOS / Linux 支持 npm 与原生二进制两种渠道；**Windows 经 npm 渠道支持**（`npm i -g @yoooclaw/cli`，需 Node ≥ 22.12.0），暂无原生二进制。Windows 上凭据落明文、daemon 经 HTTP 优雅停止，详见 [CLI 概述](/cli/)。
+- 通过 npm 安装：Node.js `>= 18`（只用于启动薄 launcher，实际执行 Go 原生二进制）
+- 通过 `install.sh` / GitHub Release 直装：无需 Node
+- 从源码构建：Go toolchain；本机当前验证使用 Go `1.26.4`
+- ASR：当前 Go beta 只支持云端 `api` / model-proxy 模式，不需要本地 Whisper
+- 平台：npm 支持 `darwin/linux` 的 `x64+arm64` 与 `win32-x64`；原生直装支持 `darwin/linux` 的 `x64+arm64`。Windows 上凭据落明文、daemon 经 HTTP 优雅停止，详见 [CLI 概述](/cli/)。
 
-macOS 本地 ASR 依赖示例：
+安装示例：
 
 ```bash
-brew install whisper-cpp
-brew install opus-tools
+npm i -g @yoooclaw/cli
+yoooclaw --help
 ```
 
 ## 从源码构建
@@ -30,13 +31,13 @@ brew install opus-tools
 git clone https://github.com/YoooClaw/cli.git
 cd cli
 
-bun install
-bun run build
-bun run test
-bun run typecheck
+go test ./...
+go vet ./...
+scripts/build-go.sh --current
+dist-native/yoooclaw-darwin-arm64 --help
 ```
 
 ## 下一步
 
 - [CLI：概述与安装](/cli/) —— 安装并了解独立命令行的命令体系。
-- [CLI：架构与实现逻辑](/cli/architecture) —— daemon 启动流程、StandaloneRuntime 复用插件、profile 与凭据分层。
+- [CLI：架构与实现逻辑](/cli/architecture) —— Go daemon 启动流程、Relay 分发、profile 与凭据分层。

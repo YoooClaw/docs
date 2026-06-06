@@ -38,7 +38,7 @@
 
 ## 输出契约
 
-成功与失败共用同一通道（stdout）与可预测结构；失败额外以非零退出码表达：
+成功与失败共用同一通道（stdout）与可预测结构。本地 CLI 校验 / 运行时错误会额外以非零退出码表达；`api` 这类 Raw HTTP 命令会尽量保留 daemon 原始响应，脚本里应同时检查 `ok` 与 HTTP status：
 
 ```json
 { "ok": false, "error": { "code": "YOOOCLAW_DAEMON_NOT_RUNNING", "message": "daemon 未运行", "hint": "先执行 yoooclaw daemon start" } }

@@ -103,11 +103,11 @@ yoooclaw notification summary --top 10 --format json
 | `recording list` 🟢 | 列出所有录音。`--status <status>` 按传输状态过滤，`--client <label>` 按 api-key label 过滤。 |
 | `recording status <id>` 🟢 | 单条录音详情（metadata、文件路径、ASR 状态、错误）。 |
 | `recording storage-path` 🟢 | 打印录音存储目录绝对路径。 |
-| `recording setup-asr` 🟢 | 配置 ASR 转写参数。`--mode api\|local`、`--api-key`、`--endpoint`、`--language`、`--model`、`--non-interactive`。 |
+| `recording setup-asr` 🟢 | 配置 ASR 转写参数。当前可用模式是 `--mode api`；`local` 仍保留在 flag/schema 中用于兼容旧请求，但 Go beta 会拒绝本地 Whisper 模式。支持 `--api-key`、`--endpoint`、`--language`、`--non-interactive`。 |
 | `recording events` 🟢 | 查询录音状态事件流。`--id <recordingId>`、`--since <10m\|1h\|24h>`、`--watch`、`--limit <n>`（默认 200）。 |
 | `recording +latest` 🟢 | 展示最新一条录音详情。 |
 
-独立 CLI 的 daemon 会接收手机端 `recordings.sync` / `POST /recordings`，音频和转写稿落在当前 profile 的 `recordings/`。`setup-asr` 写出的 `asr-config.json` 与手机端请求级 `asr` 参数兼容；当 `mode=api` 且未写入 `apiKey` 时，会回退到 account 级 `ock-` key。
+独立 CLI 的 daemon 会接收手机端 `recordings.sync` / `POST /recordings`，音频和转写稿落在当前 profile 的 `recordings/`。`setup-asr` 写出的 `asr-config.json` 与手机端请求级 `asr` 参数兼容；当 `mode=api` 且未写入 `apiKey` 时，会回退到 account 级 `ock-` key。当前 Go beta 只支持 `api` / model-proxy ASR。
 
 ```bash
 yoooclaw recording setup-asr --mode api --language auto --non-interactive
@@ -198,6 +198,8 @@ yoooclaw api POST /light/send --data '{"preset":"blink"}'
 
 `--data` 支持 `@filename`（读文件）、`-`（读 stdin）或内联 JSON；`--header <key:value>` 可重复。
 
+Raw API 会尽量保留 daemon 的原始 HTTP 语义；脚本消费时请同时检查返回体 `ok` 与 HTTP status，不要只依赖进程退出码。
+
 ## skills — Agent 技能管理 🟢
 
 把随包发布的 `SKILL.md` 安装到 Agent 的 skills 发现目录，让 Agent 自己驱动 `yoooclaw` 命令。详见 [Agent Skill](/cli/skills)。
@@ -221,7 +223,7 @@ yoooclaw skills install --agent codex
 | --- | --- |
 | `migrate from-openclaw` 🟢 | 把 `~/.openclaw/plugins/phone-notifications/` 的通知 / 录音 / 规则 / 图片与 api-key 迁移到 `~/.yoooclaw/`，迁移前自动备份。`--dry-run`、`--source <path>`。 |
 | `update self` 🟢 | 查 npm registry 比对版本并提示（不自动更新）。响应里 `dist` 标识当前安装来源（`npm` / `native`），`command` 给出对应的升级命令：npm 形态返回 `npm update -g @yoooclaw/cli`，原生二进制形态返回 `curl ... install.sh \| sh`。`--beta`、`--json`。 |
-| `doctor` 🟢/🟡 | 环境自检：Node 版本、目录权限、keychain、daemon、配置。`--json`、`--fix`。网络类自检（relay / OSS）交给 `gateway test` / `tunnel +test`。 |
+| `doctor` 🟢/🟡 | 环境自检：Go runtime、目录权限、keychain、daemon、配置。`--json`、`--fix`。网络类自检（relay / OSS）交给 `gateway test` / `tunnel +test`。 |
 
 ```bash
 yoooclaw migrate from-openclaw --dry-run

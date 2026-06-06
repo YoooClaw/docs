@@ -35,7 +35,7 @@ account 级凭据写在共享文件 `~/.yoooclaw/credentials.json`，**CLI / dae
 
 每条记录三个字段：
 
-- `label`：隧道与落盘标识，必须匹配 `[a-z0-9-]{1,32}`，且不能用保留字 `all` / `legacy` / `env` / `keychain` / `local`（见 [credentials/store.ts](https://github.com/YoooClaw/cli/blob/master/src/credentials/store.ts) 的 `isValidApiKeyLabel`）。
+- `label`：隧道与落盘标识，必须匹配 `[a-z0-9-]{1,32}`，且不能用保留字 `all` / `legacy` / `env` / `keychain` / `local`（见 [internal/creds/store.go](https://github.com/YoooClaw/cli/blob/master/internal/creds/store.go) 的校验逻辑）。
 - `key`：account 级 api-key（`ock_` 前缀）。
 - `default`：是否为默认 key。`resolveApiKey()` 在只取单 key 的场景（ASR fallback、旧的单 key 调用）会用 default 条目；**未标记 default 时运行时退化为数组第一条**，并产生一条 warning。
 
@@ -87,7 +87,7 @@ yc auth set-default-api-key phone-b
 
 ## 运行时：一 key 一隧道
 
-daemon 启动后由 [TunnelSupervisor](https://github.com/YoooClaw/cli/blob/master/src/daemon/tunnel-supervisor.ts) 按 `CredentialSet` 编排隧道——**每个 label 一条 `RelayClient`**：
+daemon 启动后由 [internal/relay/supervisor.go](https://github.com/YoooClaw/cli/blob/master/internal/relay/supervisor.go) 按 `CredentialSet` 编排隧道——**每个 label 一条 `RelayClient`**：
 
 ```text
 CredentialSet (apiKeys[])
@@ -111,7 +111,7 @@ yc tunnel reconnect --client phone-b   # 只重连指定 label
 
 ## 落盘打标与按 client 查询
 
-入站请求在鉴权阶段就确定了来源 `clientLabel`（见 [daemon/main.ts](https://github.com/YoooClaw/cli/blob/master/src/daemon/main.ts)）：
+入站请求在鉴权阶段就确定了来源 `clientLabel`（见 [internal/daemon/server.go](https://github.com/YoooClaw/cli/blob/master/internal/daemon/server.go)）：
 
 | 入站方式 | `authKind` | `clientLabel` |
 | --- | --- | --- |
@@ -146,6 +146,6 @@ yc notification +today --client all        # 全部来源
 
 ## 下一步
 
-- [架构与实现逻辑](/cli/architecture) —— daemon、Relay、StandaloneRuntime 全貌。
+- [架构与实现逻辑](/cli/architecture) —— daemon、Relay、Dispatcher 全貌。
 - [命令参考](/cli/commands) —— `auth` / `tunnel` / `notification` 全部子命令。
 - [调试与排错](/cli/debugging) —— 某条隧道连不上时的排查。
