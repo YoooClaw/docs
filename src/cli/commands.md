@@ -258,8 +258,11 @@ yoooclaw skills install --agent codex
 | `migrate from-openclaw` 🟢 | 把 `~/.openclaw/plugins/phone-notifications/` 的通知 / 录音 / 规则 / 图片与 api-key 迁移到 `~/.yoooclaw/`，迁移前自动备份。`--dry-run`、`--source <path>`。 |
 | `update self` 🟢 | 查 npm registry 比对版本并提示（不自动更新）。响应里 `dist` 标识当前安装来源（`npm` / `native`），`command` 给出对应的升级命令：npm 形态返回 `npm update -g @yoooclaw/cli`，原生二进制形态返回 `curl ... install.sh \| sh`。`--beta`、`--json`。 |
 | `doctor` 🟢/🟡 | 环境自检：Go runtime、目录权限、keychain、daemon、配置。`--json`、`--fix`。网络类自检（relay / OSS）交给 `gateway test` / `tunnel +test`。 |
+| `uninstall` 🔵 | 卸载 CLI：停掉所有 profile 的 daemon，删除二进制（`yoooclaw` 及 `yc` 软链）与配置（account / profile 的 `config.json`、`credentials.json`、`active-profile`、`daemon.lock`），**默认保留**通知 / 录音 / 图片等数据。`--data` 连同数据一并删除（清空 `~/.yoooclaw`）；`--yes` 跳过确认。npm 安装形态无法自删二进制，会提示运行 `npm uninstall -g @yoooclaw/cli`。 |
 
 ```bash
 yoooclaw migrate from-openclaw --dry-run
 yoooclaw doctor --format json
+yoooclaw uninstall              # 停 daemon + 删二进制与配置，保留数据
+yoooclaw uninstall --data --yes # 连数据一起清空，免确认
 ```

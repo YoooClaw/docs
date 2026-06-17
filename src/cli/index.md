@@ -52,6 +52,18 @@ curl -fsSL https://raw.githubusercontent.com/YoooClaw/cli/master/scripts/install
 
 > `yoooclaw update self` 会自动识别当前安装来源（npm vs 原生二进制），给出对应的升级命令 —— 不要混用两种渠道。
 
+### 卸载
+
+```bash
+# 停 daemon + 删二进制与配置，保留通知 / 录音 / 图片数据
+yoooclaw uninstall
+
+# 连数据一起清空（清空 ~/.yoooclaw），免确认
+yoooclaw uninstall --data --yes
+```
+
+原生二进制形态会自删 `yoooclaw` 与 `yc` 软链；npm 安装形态由 node_modules 托管无法自删，`uninstall` 会提示再跑一次 `npm uninstall -g @yoooclaw/cli`。
+
 ## 5 分钟上手
 
 ```bash
