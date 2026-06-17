@@ -116,7 +116,7 @@ CLI 自身就是 Agent 的工具表，无需再起一层 MCP server：
 - 失败统一返回 `{ ok: false, error: { code, message, hint } }`，错误码前缀 `YOOOCLAW_*`；本地 CLI 错误会返回非零退出码，Raw HTTP 结果请同时看 `ok` / HTTP status；
 - `yoooclaw api <METHOD> <PATH>` 作为 Raw escape hatch 直达 daemon HTTP。
 
-随包发布了 3 个 Skill（流式查通知、从 stdin 建灯效规则、隧道排查），教 Agent 直接调命令。安装前可先查看支持的 Agent 目标：
+随包发布了一组 Skill（流式查通知与分片总结、从 stdin 建灯效规则、隧道排查，以及一系列录音转写处理），教 Agent 直接调命令。安装前可先查看支持的 Agent 目标：
 
 ```bash
 yoooclaw skills targets      # 查看可安装到哪些 Agent

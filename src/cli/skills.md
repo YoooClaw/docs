@@ -8,11 +8,26 @@
 
 ## 内置 Skill
 
+### 通知 / 灯效 / 链路
+
 | Skill | 触发场景 |
 | --- | --- |
-| `yoooclaw-notification-query` | "看看最近的通知 / 谁找过我 / 总结今天的消息 / 某 App 有什么通知"——流式查通知，纯读磁盘，不需要 daemon。 |
+| `yoooclaw-notification-query` | "看看最近的通知 / 谁找过我 / 总结今天的消息 / 某 App 有什么通知"——流式查通知，小批量走 `summary`、大批量走 `summary-job` 分片总结，纯读磁盘，不需要 daemon。 |
 | `yoooclaw-lightrule-create` | "收到/当某类通知时亮灯/闪灯"这类**持久规则**——daemon 在 ingest 后评估命中并触发灯效，需要 daemon 在跑。 |
 | `yoooclaw-tunnel-debug` | "手机推送收不到 / 通知没同步 / 检查隧道 / daemon 还活着吗"——组合 `daemon status` / `tunnel status` / `tunnel +test` / `gateway test` 自检接收链路。 |
+
+### 录音处理
+
+围绕手机长录音的转写文件展开。这些 Skill 一律先通过 `yoooclaw recording storage-path` / `recording list` 定位转写文件的**真实存储位置**，严禁假设录音目录或用记忆/文档搜索代替，否则会造成遗漏。纯读磁盘，不需要 daemon。
+
+| Skill | 触发场景 |
+| --- | --- |
+| `yoooclaw-recording-query` | "有哪些录音 / 查一下录音 / 这段录音说了什么 / 根据录音回答问题 / 查看录音摘要/转写 / 搜索录音内容"——查询本地长录音记录与转写内容。 |
+| `yoooclaw-recording-meeting-minutes` | "整理一下会议纪要 / 总结这次会议 / 会议有哪些待办"——把会议录音转写整理成结构化会议纪要。 |
+| `yoooclaw-recording-interview` | "整理采访内容 / 提取核心观点 / 整理成问答 / 输出采访 Q&A"——把采访录音转写整理成结构化采访稿。 |
+| `yoooclaw-recording-entity-extraction` | "提取信息 / 找联系方式 / 有哪些人名 / 关键信息 / 从文件提取"——从转写或文本中提取人名、联系方式、机构、术语等实体，输出 sidecar JSON。 |
+| `yoooclaw-recording-translation` | "翻译录音 / 翻译成[语言] / 翻译文件 / 用[语言]整理"——把转写或文本翻译为目标语言，支持两阶段（先抽术语表再译）、保留时间戳，输出 Markdown sidecar。 |
+| `yoooclaw-recording-mindmap` | "生成思维导图 / 画个脑图 / 整理成思维导图 / 根据这个文件生成提纲"——生成 Markdown 格式的思维导图，可基于录音转写或任意文本。 |
 
 ```bash
 yoooclaw skills list                 # 列出随包发布的内置 Skill 及触发说明

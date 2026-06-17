@@ -73,11 +73,13 @@ yoooclaw daemon logs --lines 200 --level error
 | 命令 | 说明 |
 | --- | --- |
 | `notification search` | 按条件查询，时间倒序。`--from/--to <iso8601>`、`--app`、`--sender`、`--conversation-type group\|private`、`--keyword`、`--client <label>`、`--limit`（默认 100）。 |
-| `notification summary` | 聚合统计 + 样例摘要，供 Agent 总结。支持 `--client <label>`，追加 `--sample <n>`（默认 30）、`--top <n>`（默认 10）。 |
+| `notification summary` | 聚合统计 + 样例摘要，供 Agent 总结。支持 `--client <label>`，追加 `--sample <n>`（默认 30）、`--top <n>`（默认 10）。显式传 `--limit` 时只聚合最近 N 条。 |
+| `notification summary-job` | 分片通知总结任务：大批量通知切片 → 逐片总结 → 合并结果。子命令见下方 [summary-job](#notification-summary-job-—-分片通知总结-🟢)。 |
 | `notification stats` | 按维度聚合。`--from/--to <YYYY-MM-DD>`、`--app`、`--client <label>`、`--dim date\|app\|sender\|hour\|client\|all`。 |
 | `notification storage-path` | 打印 notifications 目录绝对路径。 |
 | `notification +today` | 今日通知。支持 `--client <label>`。 |
 | `notification +recent` | 最近 1 小时通知。支持 `--client <label>`。 |
+| `notification +unread` | （预留）未读通知，需先落地已读状态模型，当前返回 `YOOOCLAW_NOT_IMPLEMENTED`。 |
 
 `--app` 支持中英文别名：`微信/wechat`、`飞书/feishu/lark`、`钉钉/dingtalk`、`企业微信/wecom`、`qq` 等。
 
@@ -86,15 +88,47 @@ yoooclaw notification search --app 微信 --keyword 开会 --format ndjson
 yoooclaw notification summary --top 10 --format json
 ```
 
-## sync — 通知同步给记忆系统 🟢
+### notification summary-job — 分片通知总结 🟢
 
-供外部记忆系统按批次拉取通知的 checkpoint 协议。
+供大批量通知的「切片 → 逐片总结 → 合并」工作流。`summary` 适合小批量一次性聚合；通知条数很多、需要逐片喂给模型时走 `summary-job`：`create` 建任务并切片，`next` 领一个待总结分片，`commit` 回填该片摘要，全部完成后 `result` 合并出最终结果。也可用 `run` 跳过模型、用抽取式摘要自动跑完。
 
 | 命令 | 说明 |
 | --- | --- |
-| `sync scan` | 扫描未处理通知，返回各日期待同步摘要。 |
+| `notification summary-job create` | 创建任务并按查询切片。复用全部 `notification` 查询 flags（`--from/--to`、`--app`、`--sender`、`--conversation-type`、`--keyword`、`--client`、`--limit`，`--limit` 默认 1000），加 `--chunk-size <n>`（每片条数，默认 150）、`--max-content <n>`（单条标题/正文最大字数，默认 120）。 |
+| `notification summary-job status <id>` | 查看任务状态与各分片进度。 |
+| `notification summary-job next <id>` | 领取或重试下一个待总结分片，返回分片内容与 `chunkId`。 |
+| `notification summary-job commit <id>` | 回填分片摘要并标记该片完成。`--chunk-id <id>`（必填，来自 `next`），`--summary <text>` 或 `--summary-file <path>` 二选一传入摘要。 |
+| `notification summary-job run <id>` | 用抽取式摘要自动处理待总结分片（无需模型）。`--max-chunks <n>`（本次最多处理片数，默认 20）、`--include-result`（完成时输出 markdown 结果）。 |
+| `notification summary-job result <id>` | 合并已提交的分片摘要并返回最终结果。 |
+| `notification summary-job cancel <id>` | 取消任务（保留已落盘的分片与摘要）。 |
+
+```bash
+# Agent 驱动：建任务 → 循环 next/commit → 合并
+JOB=$(yoooclaw notification summary-job create --app 微信 --limit 2000 --format json)
+yoooclaw notification summary-job next <id>     # 取一片，喂给模型总结
+yoooclaw notification summary-job commit <id> --chunk-id <chunk> --summary "本片摘要…"
+yoooclaw notification summary-job result <id> --format json
+
+# 无模型场景：抽取式自动跑完
+yoooclaw notification summary-job run <id> --include-result --format json
+```
+
+## sync — 通知同步给记忆系统 🟢
+
+供外部记忆系统按批次拉取通知的 checkpoint 协议。`scan` / `next` 共享一组日期范围 flags：`--all`（处理 checkpoint 之后所有日期）、`--date <YYYY-MM-DD>`（仅指定日期）、`--from-date` / `--to-date`（区间）；都不传时默认只处理本地当天。
+
+| 命令 | 说明 |
+| --- | --- |
+| `sync scan` | 扫描未处理通知，默认只返回本地当天待同步摘要；配合范围 flags 扩大扫描范围。 |
+| `sync next` | 通用批次迭代器：返回范围内下一批未处理通知（≤100 条）及 `commitCommand`，全部处理完返回 `done=true`。配合范围 flags 使用。 |
 | `sync fetch --date <YYYY-MM-DD>` | 获取指定日期未处理通知详情。`--max-end-index <n>` 用于幂等切片。 |
 | `sync commit --date <YYYY-MM-DD>` | 标记当前批次处理完成。`--end-index <n>` 精确提交。 |
+
+```bash
+# 迭代器写法：next 直接返回下一批 + 提交命令，处理完 done=true
+yoooclaw sync next --all --format json
+yoooclaw sync commit --date 2026-06-17 --end-index 42
+```
 
 ## recording — 录音管理
 
