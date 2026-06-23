@@ -49,11 +49,33 @@ CLI 命令分三类，文档里用色块标记：
 4. 初始化通知、录音、图片、灯效规则、monitor 等本地存储
 5. http.Server.listen；端口被占时从 18789 起自动 +1（最多 64 次）
 6. 写 daemon.lock {pid, startedAt, bind, port, logLevel}
-7. relay.enabled 且有 api-key 时按 label 启动多条 Relay 隧道
+7. 按 ingress 模式装配传输层（见下「Ingress 模式」）：standalone 且 relay.enabled 且有 api-key 时按 label 启动多条 Relay 隧道；proxied / direct 跳过隧道
 8. SIGTERM/SIGINT 或 /daemon/stop 触发优雅关闭
 ```
 
 端口处理是关键设计：实际端口永远以 `daemon status` 的 `port` 为准，不要假设一定是 18789。Windows 上停止 daemon 走 HTTP `POST /daemon/stop`；macOS / Linux 优先走信号，超时后再强杀。
+
+## Ingress 模式
+
+daemon 的「到手机的连接」是可插拔的传输层，由 `--ingress` 选择**唯一** owner（优先级 `--ingress` flag > `YOOOCLAW_INGRESS` 环境变量 > `config.ingress.mode`，默认 `standalone`）。这样独立 CLI 与宿主插件（如 hermes-plugin）不会同时连 Relay 导致双连接、双 ingest。
+
+| 模式 | 到手机的连接 owner | Relay 隧道 | ingest 鉴权 | 出站事件（Egress） |
+| --- | --- | --- | --- | --- |
+| `standalone`（默认） | Go daemon 自己的隧道 | 启用 | gateway token / 本机 | 经 Relay 推回手机 |
+| `proxied`（嵌入插件） | 宿主插件代理 | 关闭 | **必须 api-key** | POST 回宿主回调 URL |
+| `direct`（LAN / 测试） | 调用方直接 POST | 关闭 | api-key / token | 丢弃（仅落盘） |
+
+入站永远是同一组 ingest 端点（`POST /notifications` `/recordings` `/images`），谁来「喂」由模式决定。出站抽象成 Egress 端口：`standalone` 走 Relay 隧道（`RelayEgress`）、`proxied` POST 到 `--egress-callback-url`（`ProxyEgress`）、`direct` 丢弃（`NoopEgress`），替换了原先散落的隧道 PushEvent 调用。
+
+`proxied` 嵌入示例（宿主代理连接、daemon 只暴露 ingest API）：
+
+```bash
+yoooclaw daemon run-foreground --ingress proxied \
+  --egress-callback-url http://127.0.0.1:8765/yoooclaw/egress \
+  --egress-callback-token <token>
+```
+
+`proxied` 强制要求 api-key（否则启动报 `YOOOCLAW_UNAUTHORIZED`）；`/daemon/reload` 仅在 `standalone` 下重建隧道；`daemon status` 新增 `ingressMode` 字段。完整设计见 [docs/design/ingress-layering.md](https://github.com/YoooClaw/cli/blob/master/docs/design/ingress-layering.md)。
 
 ## HTTP 路由与鉴权
 
@@ -184,7 +206,10 @@ instance 级 gateway token 随 profile 走，由 `config.json` 的 `auth.tokenRe
 | Relay 入站 | 宿主 gateway | Go daemon Dispatcher |
 | 查询 | 宿主能力 | 纯读本地 profile 文件 |
 
-同一个账号不要让插件和独立 CLI daemon 同时连 Relay，否则同一条手机消息可能落两份。实践上二选一：要么停插件 Relay，要么停 CLI daemon。
+同一个账号不要让插件和独立 CLI daemon 同时连 Relay，否则同一条手机消息可能落两份。两种解法：
+
+- **二选一**：停插件 Relay，或停 CLI daemon——简单但需要人为协调。
+- **代理（推荐用于嵌入）**：用 `--ingress proxied` 启动 daemon，让宿主插件代理「到手机的连接」，CLI 只暴露 ingest API 收数据、经 egress 回调回投出站事件。这样连接 owner 唯一，从机制上杜绝双连接。详见上文「Ingress 模式」。
 
 ## 下一步
 
