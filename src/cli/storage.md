@@ -19,7 +19,7 @@ profiles/<name>/
 │   ├── .ids/               # 按 id 去重
 │   └── .keys/              # 按内容指纹去重
 ├── recordings/
-│   ├── audio/              # 原始音频(.ogg) + 打点(.srt)
+│   ├── audio/              # 原始音频(.ogg)
 │   ├── transcript-data/    # 转写 JSON（主存储）
 │   ├── transcripts/        # 转写正文 .md（派生）
 │   ├── summaries/          # 摘要 .md（派生）
@@ -57,27 +57,25 @@ profiles/<name>/
 
 ## 录音：音频 → 转写 JSON → 摘要
 
-录音是链路最长的一类，落盘分四级目录，由 `index.json` 串起来。一条录音从手机端 `recordings.sync` 进来后：
+录音是链路最长的一类，落盘分四级目录，由 `index.json` 串起来。录音结果由 App / 云端经 `recordings.result.write` 写入：
 
 ```text
-recordings.sync(元数据)
-  ↓  index.json 落条目，status=syncing_openclaw
-后台拉 OSS 音频 → audio/<id>.ogg (+ .srt 打点)
-  ↓  status=transcribing
-ASR 转写（api/model-proxy，默认可回退 account ock- key）
-  ↓
+recordings.result.write(转写/总结，可选 ossUrl)
+  ↓  index.json 落条目（新建则 status=synced）
 transcript-data/<id>.json   ← 转写主存储（结构化：title/summary/text/segments）
 transcripts/<id>_<标题>.md  ← 正文（派生）
 summaries/<id>.md           ← 摘要（派生）
+  ↓  可选：带 ossUrl 时后台下载音频 → audio/<id>.ogg
   ↓  status=transcribed
 ```
+
+需要在 daemon 本机重新转写时，`recordings.retranscribe` 用本地 / 请求级 ASR 配置触发：`status=transcribing → ASR（api/model-proxy，默认可回退 account ock- key）→ transcribed`。
 
 设计上的关键点：
 
 - **`transcript-data/` 的 JSON 是主存储**，`transcripts/` 正文和 `summaries/` 摘要都是从它派生的。`readTranscript` / `readSummary` 优先读 JSON，旧数据才回退读 Markdown——保证新老数据一个口径。
 - **`title` / `summary` 内置**：转写完成会顺带产出 ≤ 标题级别的 `title` 和一段摘要，写进 index 与 `summaries/`。Agent 想「快速了解这条录音讲了啥」时，**读摘要就够，不必拉全文**。
-- **状态机严格校验**：`transfer_status` 在 `syncing_openclaw → transcribing → transcribed`（及各 `*_failed`）之间按状态机迁移，非法跃迁直接拒绝。daemon 重启时残留的 `transcribing` 会被判定为中断并落 `transcribe_failed`。
-- **in-flight 去重**：手机端对同一 `recordingId` 重复推 sync 时，第二次直接返回当前状态，避免并行 ASR 撞状态机。
+- **状态机严格校验**：`transfer_status` 在 `synced → transcribing → transcribed`（及 `transcribe_failed`）之间按状态机迁移，非法跃迁直接拒绝。`result.write` 写入结果属于带外（out-of-band）落盘，直接置 `transcribed`。daemon 重启时残留的 `transcribing` 会被判定为中断并落 `transcribe_failed`。
 - **事件流**：每次状态变化追加到 `state/events.jsonl`，`yc recording events --id <id> --watch` 可像 `tail -f` 一样跟随；同一事件也经 Relay 以 `recording.status` 推回手机端。
 
 ASR 配置写在 `recordings/asr-config.json`（`yc recording setup-asr` 生成），`mode=api` 缺 key 时回退到 account 级 `ock-` key。当前 Go beta 只支持 `api` / model-proxy；`local` mode 保留在 schema 中用于兼容旧请求，但会被校验拒绝。

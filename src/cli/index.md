@@ -102,7 +102,7 @@ yoooclaw daemon start --bind 0.0.0.0 --port 18789 --no-detach
 
 ## 录音同步与 ASR
 
-daemon 会接收手机端的 `recordings.sync` / `POST /recordings`，把音频下载到当前 profile 的 `recordings/`，并按配置触发 ASR。独立 CLI 形态下，ASR 配置由本机一次性写入 `recordings/asr-config.json`；手机端没随请求传 `asr` 时 daemon 会自动读取本地配置。
+daemon 经 `recordings.result.write` 接收 App / 云端写入的转写与总结（可选带 `ossUrl` 时后台下载音频）到当前 profile 的 `recordings/`。本机重新转写经 `recordings.retranscribe` 按配置触发 ASR；独立 CLI 形态下，ASR 配置由本机一次性写入 `recordings/asr-config.json`，请求没带 `asr` 时 daemon 会自动读取本地配置。
 
 ```bash
 # api 模式：不传 --api-key 时，daemon 会回退到 account 级 ock- key

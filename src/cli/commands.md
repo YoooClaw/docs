@@ -141,7 +141,7 @@ yoooclaw sync commit --date 2026-06-17 --end-index 42
 | `recording events` 🟢 | 查询录音状态事件流。`--id <recordingId>`、`--since <10m\|1h\|24h>`、`--watch`、`--limit <n>`（默认 200）。 |
 | `recording +latest` 🟢 | 展示最新一条录音详情。 |
 
-独立 CLI 的 daemon 会接收手机端 `recordings.sync` / `POST /recordings`，音频和转写稿落在当前 profile 的 `recordings/`。`setup-asr` 写出的 `asr-config.json` 与手机端请求级 `asr` 参数兼容；当 `mode=api` 且未写入 `apiKey` 时，会回退到 account 级 `ock-` key。当前 Go beta 只支持 `api` / model-proxy ASR。
+独立 CLI 的 daemon 经 `recordings.result.write` 接收 App / 云端写入的转写与总结（可选带 `ossUrl` 时后台下载音频），落在当前 profile 的 `recordings/`。本机重新转写经 `recordings.retranscribe` 触发：`setup-asr` 写出的 `asr-config.json` 与请求级 `asr` 参数兼容；当 `mode=api` 且未写入 `apiKey` 时，会回退到 account 级 `ock-` key。当前 Go beta 只支持 `api` / model-proxy ASR。
 
 ```bash
 yoooclaw recording setup-asr --mode api --language auto --non-interactive

@@ -73,7 +73,7 @@ yc daemon logs -f --level error    # 只跟 error
 | `Relay tunnel: ✔ connected, heartbeat started` | **连上了**，心跳启动 |
 | `→ heartbeat "ping"` / `← pong received` | 每 10s 一次心跳保活，能持续看到说明连接稳定 |
 | `Relay tunnel: relay disconnected (…)` | 断开，随后进入指数退避重连 |
-| `[relay-dispatcher] req id=… method=recordings.sync` | 手机端经 Relay 调了 gateway 方法，已进入 daemon 分发 |
+| `[relay-dispatcher] req id=… method=recordings.result.write` | App / 云端经 Relay 调了 gateway 方法，已进入 daemon 分发 |
 | `[recording-status] <id> → transcribing` | 录音状态变化已产生，并会追加到 `recordings/state/events.jsonl` |
 
 ## 常见症状 → 处理
@@ -86,7 +86,7 @@ yc daemon logs -f --level error    # 只跟 error
 | `mode: standalone-http` 但已设 api-key | `relay.enabled=false` | `yc config set relay.enabled true` 后重启 |
 | `connected: false`，`reconnectAttempt` 持续增长 | 网络不通 / Relay 不可达 | 查网络；临时可走直连 HTTP（见下） |
 | 录音停在 `synced` 没有转写稿 | 未配置 ASR，或云端 model-proxy ASR 不可用 | `yc recording setup-asr --mode api --language auto --non-interactive` 后重试；同时看 `yc recording events --id <id>` |
-| 录音状态一会儿成功一会儿失败 | 手机端重复推同一 recordingId 或旧错误残留 | 新版 daemon 会 in-flight 去重并在成功终态清理 `lastError`；重启 daemon 后再观察事件流 |
+| 录音 `lastError` 残留 | 历史失败的错误信息没清掉 | daemon 在 `synced` / `transcribed` 等成功终态会自动清理 `lastError`；重启 daemon 后再观察事件流 |
 
 ## 主动操作与自检
 
